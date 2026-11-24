@@ -1,6 +1,9 @@
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
+using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Automation;
@@ -19,19 +22,18 @@ namespace Countdown
         private enum TimerState { Ready, Running, Paused, Finished }
 
         private const string InputHint = "分:秒、または 時:分:秒";
-        private const double DefaultShadowOpacity = 85;
-        private const double DefaultShadowBlur = 7;
         private static readonly Geometry PlayIcon = Geometry.Parse("M 0,0 L 11,6 L 0,12 Z");
         private static readonly Geometry PauseIcon = Geometry.Parse("M 0,0 H 4 V 12 H 0 Z M 7,0 H 11 V 12 H 7 Z");
 
         private readonly Stopwatch elapsed = new Stopwatch();
         private readonly DispatcherTimer refreshTimer;
+        private readonly CountdownSettings initialSettings;
         private readonly DropShadowEffect digitShadow = new DropShadowEffect
         {
             Color = Color.FromRgb(7, 10, 16),
             ShadowDepth = 2
         };
-        private TimeSpan duration = TimeSpan.FromMinutes(5);
+        private TimeSpan duration;
         private TimerState state = TimerState.Ready;
         private SolidColorBrush digitColor;
 
@@ -42,7 +44,15 @@ namespace Countdown
             InitializeComponent();
             refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
             refreshTimer.Tick += RefreshCountdown;
-            ResetDigitAppearance(this, new RoutedEventArgs());
+            initialSettings = CountdownSettings.Load();
+            duration = TimeSpan.FromSeconds(initialSettings.DurationSeconds);
+            OpacitySlider.Value = initialSettings.BackgroundOpacity;
+            digitColor = initialSettings.DigitColor is Color color ? new SolidColorBrush(color) : null;
+            var weight = FontWeight.FromOpenTypeWeight(initialSettings.DigitWeight);
+            WeightOptions.SelectedItem = WeightOptions.Items.OfType<ListBoxItem>()
+                .FirstOrDefault(item => Equals(item.Tag, weight)) ?? DefaultWeightOption;
+            ShadowOpacitySlider.Value = initialSettings.ShadowOpacity;
+            ShadowBlurSlider.Value = initialSettings.ShadowBlur;
             UpdateControls();
             UpdateDisplay(duration);
         }
@@ -307,8 +317,8 @@ namespace Countdown
             digitColor = null;
             UpdateDigitColor();
             DefaultWeightOption.IsSelected = true;
-            ShadowOpacitySlider.Value = DefaultShadowOpacity;
-            ShadowBlurSlider.Value = DefaultShadowBlur;
+            ShadowOpacitySlider.Value = CountdownSettings.DefaultShadowOpacity;
+            ShadowBlurSlider.Value = CountdownSettings.DefaultShadowBlur;
         }
 
         private void PositionWindow(object sender, RoutedEventArgs e)
@@ -344,6 +354,34 @@ namespace Countdown
         private void CloseWindow(object sender, RoutedEventArgs e)
         {
             Close();
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            base.OnClosing(e);
+            if (e.Cancel)
+            {
+                return;
+            }
+
+            var settings = new CountdownSettings
+            {
+                DurationSeconds = (int)duration.TotalSeconds,
+                BackgroundOpacity = OpacitySlider.Value,
+                DigitColor = digitColor?.Color,
+                DigitWeight = TimeText.FontWeight.ToOpenTypeWeight(),
+                ShadowOpacity = ShadowOpacitySlider.Value,
+                ShadowBlur = ShadowBlurSlider.Value
+            };
+
+            try
+            {
+                settings.SaveIfChanged(initialSettings);
+            }
+            catch (Exception error) when (error is IOException || error is UnauthorizedAccessException)
+            {
+                MessageBox.Show(this, "設定を保存できませんでした。", Title, MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         protected override void OnClosed(EventArgs e)
