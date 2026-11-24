@@ -1,0 +1,331 @@
+<Window x:Class="Countdown.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="カウントダウン" Width="334" SizeToContent="Height"
+        Topmost="True" WindowStyle="None" ResizeMode="NoResize"
+        AllowsTransparency="True" Background="Transparent"
+        FontFamily="Segoe UI, Yu Gothic UI, Meiryo" FontSize="13"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        WindowStartupLocation="Manual" Loaded="PositionWindow" SizeChanged="KeepSettingsOnScreen"
+        MouseLeftButtonDown="DragPanel" PreviewKeyDown="HandleEscape">
+  <Window.Resources>
+    <SolidColorBrush x:Key="ForegroundBrush" Color="#F5F7FA" />
+    <SolidColorBrush x:Key="MutedBrush" Color="#B5C1D2" />
+    <SolidColorBrush x:Key="AccentBrush" Color="#CFF184" />
+    <SolidColorBrush x:Key="FinishedBrush" Color="#FFD28B" />
+
+    <Style x:Key="ButtonFocus" TargetType="Control">
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate>
+            <Border BorderBrush="#E1F6B5" BorderThickness="1" CornerRadius="8" Margin="2" />
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style TargetType="Button" x:Key="PillButton">
+      <Setter Property="FocusVisualStyle" Value="{StaticResource ButtonFocus}" />
+      <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}" />
+      <Setter Property="Background" Value="#293341" />
+      <Setter Property="BorderBrush" Value="#445365" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Padding" Value="9,0" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Grid>
+              <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                      BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9" />
+              <Border x:Name="Highlight" CornerRadius="9" IsHitTestVisible="False" />
+              <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Highlight" Property="Background" Value="#26FFFFFF" />
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Highlight" Property="Background" Value="#35000000" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style TargetType="Button" x:Key="PrimaryButton" BasedOn="{StaticResource PillButton}">
+      <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="Foreground" Value="#17230D" />
+    </Style>
+
+    <Style TargetType="Button" x:Key="IconButton" BasedOn="{StaticResource PillButton}">
+      <Setter Property="Width" Value="32" />
+      <Setter Property="Height" Value="30" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
+
+    <Style x:Key="SettingsTabs" TargetType="TabControl">
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="TabControl">
+            <DockPanel>
+              <Border DockPanel.Dock="Top" Background="#151D28" CornerRadius="8" Padding="3" Margin="0,0,0,12">
+                <UniformGrid IsItemsHost="True" Rows="1" />
+              </Border>
+              <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent" />
+            </DockPanel>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="SettingsTab" TargetType="TabItem">
+      <Setter Property="FocusVisualStyle" Value="{StaticResource ButtonFocus}" />
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="TabItem">
+            <Border Background="{TemplateBinding Background}" CornerRadius="6" Height="29">
+              <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+      <Style.Triggers>
+        <Trigger Property="IsMouseOver" Value="True">
+          <Setter Property="Background" Value="#293341" />
+        </Trigger>
+        <Trigger Property="IsSelected" Value="True">
+          <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+          <Setter Property="Background" Value="#344354" />
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+
+    <Style x:Key="WeightOption" TargetType="ListBoxItem">
+      <Setter Property="FocusVisualStyle" Value="{StaticResource ButtonFocus}" />
+      <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}" />
+      <Setter Property="Background" Value="#293341" />
+      <Setter Property="BorderBrush" Value="#445365" />
+      <Setter Property="Margin" Value="0,0,3,0" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ListBoxItem">
+            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="1" CornerRadius="7" Height="29">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+      <Style.Triggers>
+        <Trigger Property="IsMouseOver" Value="True">
+          <Setter Property="Background" Value="#374557" />
+        </Trigger>
+        <Trigger Property="IsSelected" Value="True">
+          <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+          <Setter Property="Background" Value="#354331" />
+          <Setter Property="BorderBrush" Value="#8AA363" />
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+
+    <Style x:Key="ColorSwatch" TargetType="Button" BasedOn="{StaticResource PillButton}">
+      <Setter Property="Height" Value="29" />
+      <Setter Property="Margin" Value="0,0,5,0" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
+  </Window.Resources>
+
+  <Grid TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="Grayscale">
+    <Border x:Name="Backdrop" CornerRadius="19" BorderBrush="#3A4657" BorderThickness="1"
+            Background="#151C26" />
+
+    <StackPanel Margin="18,14,18,18">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Cursor="SizeAll"
+                    ToolTip="ドラッグして移動">
+          <StackPanel.Effect>
+            <DropShadowEffect Color="#000000" ShadowDepth="1" BlurRadius="5" Opacity="0.85" />
+          </StackPanel.Effect>
+          <Ellipse x:Name="StatusDot" Width="7" Height="7" Fill="{StaticResource MutedBrush}" Margin="2,0,8,0" />
+          <TextBlock x:Name="StatusText" Text="開始できます" Foreground="{StaticResource ForegroundBrush}"
+                     FontWeight="SemiBold" AutomationProperties.LiveSetting="Polite" />
+        </StackPanel>
+
+        <Button Grid.Column="1" x:Name="SettingsButton" Style="{StaticResource IconButton}" Margin="0,0,6,0"
+                ToolTip="設定" AutomationProperties.Name="設定" Click="ToggleSettings">
+          <Path Stroke="{StaticResource ForegroundBrush}" StrokeThickness="1.35" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                Data="M 0,2 H 5 M 9,2 H 14 M 0,7 H 9 M 13,7 H 14 M 0,12 H 2 M 6,12 H 14
+                      M 5,2 A 2,2 0 1 0 9,2 A 2,2 0 1 0 5,2
+                      M 9,7 A 2,2 0 1 0 13,7 A 2,2 0 1 0 9,7
+                      M 2,12 A 2,2 0 1 0 6,12 A 2,2 0 1 0 2,12" />
+        </Button>
+
+        <Button Grid.Column="2" Style="{StaticResource IconButton}" ToolTip="閉じる" AutomationProperties.Name="閉じる" Click="CloseWindow">
+          <Path Stroke="{StaticResource ForegroundBrush}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                Data="M 0,0 L 9,9 M 9,0 L 0,9" />
+        </Button>
+      </Grid>
+
+      <Grid Height="106" Margin="0,3,0,0" Cursor="SizeAll" ToolTip="ドラッグして移動">
+        <TextBlock x:Name="TimeText" Text="05:00" FontFamily="Bahnschrift, Segoe UI" FontWeight="SemiBold"
+                   FontSize="78" Foreground="{StaticResource ForegroundBrush}"
+                   VerticalAlignment="Center" HorizontalAlignment="Center" />
+      </Grid>
+
+      <Grid Height="4" Margin="2,0,2,17" IsHitTestVisible="False">
+        <Border x:Name="ProgressTrack" Background="#344252" CornerRadius="2" />
+        <Border x:Name="ProgressFill" Background="{StaticResource AccentBrush}" CornerRadius="2"
+                RenderTransformOrigin="0,0.5">
+          <Border.RenderTransform>
+            <ScaleTransform x:Name="ProgressScale" />
+          </Border.RenderTransform>
+        </Border>
+      </Grid>
+
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="106" />
+        </Grid.ColumnDefinitions>
+        <Button x:Name="StartButton" Style="{StaticResource PrimaryButton}" Height="40" Margin="0,0,8,0"
+                Click="ToggleCountdown">
+          <StackPanel Orientation="Horizontal">
+            <Path x:Name="StartIcon" Width="11" Height="12" Stretch="Uniform" Margin="0,0,8,0"
+                  Fill="#17230D" VerticalAlignment="Center" />
+            <TextBlock x:Name="StartLabel" Text="開始" />
+          </StackPanel>
+        </Button>
+        <Button Grid.Column="1" Height="40" Style="{StaticResource PillButton}" Click="ResetCountdown" AutomationProperties.Name="リセット">
+          <StackPanel Orientation="Horizontal">
+            <Path Width="13" Height="14" Stroke="{StaticResource ForegroundBrush}" StrokeThickness="1.5"
+                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Margin="0,0,6,0"
+                  Data="M 2,5 A 5,5 0 1 1 2,10 M 2,1 L 2,5 L 6,5" VerticalAlignment="Center" />
+            <TextBlock Text="リセット" />
+          </StackPanel>
+        </Button>
+      </Grid>
+
+      <Border x:Name="SettingsPanel" Visibility="Collapsed" CornerRadius="12" Background="#202A37"
+              BorderThickness="1" BorderBrush="#39485A" Padding="12" Margin="0,12,0,0">
+        <TabControl Style="{StaticResource SettingsTabs}" ItemContainerStyle="{StaticResource SettingsTab}">
+          <TabItem Header="時間・背景">
+            <StackPanel>
+              <Label Content="カウントダウン時間" Target="{Binding ElementName=DurationInput}" Padding="0"
+                     Foreground="{StaticResource ForegroundBrush}" FontWeight="SemiBold" />
+              <UniformGrid Columns="4" Margin="0,8,0,8">
+                <Button Height="30" Margin="0,0,5,0" Padding="0" Style="{StaticResource PillButton}" Content="1分" Tag="1" Click="ChoosePreset" />
+                <Button Height="30" Margin="0,0,5,0" Padding="0" Style="{StaticResource PillButton}" Content="5分" Tag="5" Click="ChoosePreset" />
+                <Button Height="30" Margin="0,0,5,0" Padding="0" Style="{StaticResource PillButton}" Content="15分" Tag="15" Click="ChoosePreset" />
+                <Button Height="30" Padding="0" Style="{StaticResource PillButton}" Content="25分" Tag="25" Click="ChoosePreset" />
+              </UniformGrid>
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="66" />
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="DurationInput" Height="34" Background="#111923" Foreground="{StaticResource ForegroundBrush}"
+                         BorderBrush="#586B80" CaretBrush="{StaticResource ForegroundBrush}" FontFamily="Consolas"
+                         FontSize="17" Padding="8,0" VerticalContentAlignment="Center" MaxLength="8"
+                         AutomationProperties.HelpText="分:秒、または 時:分:秒" KeyDown="HandleDurationKey" TextChanged="ClearDurationError" />
+                <Button Grid.Column="1" Height="34" Margin="6,0,0,0" Style="{StaticResource PrimaryButton}"
+                        Content="適用" Click="ApplyDuration" />
+              </Grid>
+              <TextBlock x:Name="DurationHint" Text="分:秒、または 時:分:秒" FontSize="11" Margin="0,5,0,10"
+                         Foreground="{StaticResource MutedBrush}" AutomationProperties.LiveSetting="Polite" />
+              <Border Height="1" Background="#435266" Margin="0,0,0,9" />
+              <DockPanel>
+                <TextBlock x:Name="OpacityText" DockPanel.Dock="Right" Text="100%" Foreground="{StaticResource MutedBrush}" />
+                <Label Content="背景の不透明度" Target="{Binding ElementName=OpacitySlider}" Padding="0"
+                       Foreground="{StaticResource ForegroundBrush}" FontWeight="SemiBold" />
+              </DockPanel>
+              <Slider x:Name="OpacitySlider" Margin="0,7,0,0" Minimum="0" Maximum="100" Value="100" SmallChange="5"
+                      LargeChange="10" IsMoveToPointEnabled="True" ValueChanged="ChangeOpacity" />
+            </StackPanel>
+          </TabItem>
+
+          <TabItem Header="数字の見た目">
+            <StackPanel>
+              <TextBlock Text="数字の色" Foreground="{StaticResource ForegroundBrush}" FontWeight="SemiBold" />
+              <Grid Margin="0,6,0,10">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="91" />
+                </Grid.ColumnDefinitions>
+                <UniformGrid Columns="4">
+                  <Button Style="{StaticResource ColorSwatch}" Background="{StaticResource ForegroundBrush}"
+                          ToolTip="白" AutomationProperties.Name="白" Click="ChooseDigitColor" />
+                  <Button Style="{StaticResource ColorSwatch}" Background="#FFD28B"
+                          ToolTip="琥珀色" AutomationProperties.Name="琥珀色" Click="ChooseDigitColor" />
+                  <Button Style="{StaticResource ColorSwatch}" Background="#AFE4FF"
+                          ToolTip="水色" AutomationProperties.Name="水色" Click="ChooseDigitColor" />
+                  <Button Style="{StaticResource ColorSwatch}" Background="#F8ABC4"
+                          ToolTip="ピンク" AutomationProperties.Name="ピンク" Click="ChooseDigitColor" />
+                </UniformGrid>
+                <Button Grid.Column="1" Height="29" Style="{StaticResource PillButton}"
+                        AutomationProperties.Name="任意の色を選ぶ" Click="PickDigitColor">
+                  <StackPanel Orientation="Horizontal">
+                    <Ellipse x:Name="DigitColorSample" Width="11" Height="11" Margin="0,0,6,0"
+                             Stroke="#8795A7" Fill="{StaticResource ForegroundBrush}" />
+                    <TextBlock Text="選ぶ…" />
+                  </StackPanel>
+                </Button>
+              </Grid>
+
+              <Label Content="数字の太さ" Target="{Binding ElementName=WeightOptions}" Padding="0"
+                     Foreground="{StaticResource ForegroundBrush}" FontWeight="SemiBold" />
+              <ListBox x:Name="WeightOptions" Margin="0,6,-3,10" Padding="0" Background="Transparent" BorderThickness="0"
+                       SelectedIndex="2" ItemContainerStyle="{StaticResource WeightOption}" SelectionChanged="ChangeDigitWeight">
+                <ListBox.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <UniformGrid Rows="1" />
+                  </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBoxItem Content="細め" Tag="{x:Static FontWeights.Light}" />
+                <ListBoxItem Content="標準" Tag="{x:Static FontWeights.Normal}" />
+                <ListBoxItem x:Name="DefaultWeightOption" Content="中太" Tag="{x:Static FontWeights.SemiBold}" />
+                <ListBoxItem Content="太め" Tag="{x:Static FontWeights.Bold}" />
+              </ListBox>
+
+              <Border Height="1" Background="#435266" Margin="0,0,0,8" />
+              <DockPanel>
+                <TextBlock DockPanel.Dock="Right" Foreground="{StaticResource MutedBrush}"
+                           Text="{Binding Value, ElementName=ShadowOpacitySlider, StringFormat={}{0:0}%}" />
+                <Label Content="影の濃さ" Target="{Binding ElementName=ShadowOpacitySlider}" Padding="0"
+                       Foreground="{StaticResource ForegroundBrush}" FontWeight="SemiBold" />
+              </DockPanel>
+              <Slider x:Name="ShadowOpacitySlider" Margin="0,5,0,7" Minimum="0" Maximum="100" TickFrequency="1"
+                      SmallChange="1" LargeChange="10" IsSnapToTickEnabled="True" IsMoveToPointEnabled="True"
+                      ValueChanged="ChangeDigitShadow" />
+              <DockPanel>
+                <TextBlock DockPanel.Dock="Right" Foreground="{StaticResource MutedBrush}"
+                           Text="{Binding Value, ElementName=ShadowBlurSlider, StringFormat={}{0:0}}" />
+                <Label Content="影のぼかし" Target="{Binding ElementName=ShadowBlurSlider}" Padding="0"
+                       Foreground="{StaticResource ForegroundBrush}" FontWeight="SemiBold" />
+              </DockPanel>
+              <Slider x:Name="ShadowBlurSlider" Margin="0,5,0,10" Minimum="0" Maximum="20" TickFrequency="1"
+                      SmallChange="1" LargeChange="5" IsSnapToTickEnabled="True" IsMoveToPointEnabled="True"
+                      ValueChanged="ChangeDigitShadow" />
+              <Button Height="29" HorizontalAlignment="Right" Style="{StaticResource PillButton}"
+                      Content="見た目を初期値に戻す" Click="ResetDigitAppearance" />
+            </StackPanel>
+          </TabItem>
+        </TabControl>
+      </Border>
+    </StackPanel>
+  </Grid>
+</Window>
