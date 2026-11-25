@@ -16,7 +16,10 @@ foreach ($tool in @($candle, $light, $uiExtension)) {
 $projectDirectory = Split-Path -Parent $PSScriptRoot
 $projectPath = Join-Path $projectDirectory 'Countdown.csproj'
 $project = [xml](Get-Content -LiteralPath $projectPath -Raw)
-$version = $project.Project.PropertyGroup.Version
+$version = $project.SelectSingleNode('/Project/PropertyGroup/Version').InnerText
+if ($version -notmatch '^\d+\.\d+\.\d+$') {
+    throw 'Countdown.csproj must declare a three-part Version for the MSI.'
+}
 $releaseDirectory = Join-Path $projectDirectory "bin\Release\v$version"
 $appDirectory = Join-Path $releaseDirectory 'app'
 $workDirectory = Join-Path $projectDirectory "obj\installer\v$version"
