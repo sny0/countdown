@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="カウントダウン" Manufacturer="sny0" Version="$(var.Version)"
+           Language="1041" Codepage="932" UpgradeCode="AAC97B62-CB20-4E93-9485-0625AE2709DD">
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" SummaryCodepage="932" />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+    <!-- A rebuilt installer for the same version also replaces the existing installation. -->
+    <MajorUpgrade Schedule="afterInstallInitialize" AllowSameVersionUpgrades="yes"
+                  DowngradeErrorMessage="新しいバージョンのカウントダウンがインストールされています。" />
+    <Property Id="ARPNOMODIFY" Value="1" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="スタートメニューの「カウントダウン」から起動できます。" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="LocalAppDataFolder">
+        <Directory Id="CountdownDataFolder" Name="Countdown">
+          <Directory Id="INSTALLFOLDER" Name="App">
+            <Component Id="CountdownFiles" Guid="E2832271-B60A-4D26-B1D1-9DE5DE5EC79A">
+              <File Id="CountdownExecutable" Source="$(var.AppDirectory)\Countdown.exe" />
+              <File Id="CountdownConfiguration" Source="$(var.AppDirectory)\Countdown.exe.config" />
+              <RegistryValue Root="HKCU" Key="Software\sny0\Countdown" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
+              <RemoveFolder Id="RemoveApplicationFolder" On="uninstall" />
+              <RemoveFolder Id="RemoveEmptyDataFolder" Directory="CountdownDataFolder" On="uninstall" />
+            </Component>
+          </Directory>
+        </Directory>
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Component Id="CountdownStartMenu" Guid="550DC89A-71C8-439B-929A-54BBD9F474C9">
+          <Shortcut Id="CountdownShortcut" Name="カウントダウン" Target="[INSTALLFOLDER]Countdown.exe" WorkingDirectory="INSTALLFOLDER" />
+          <RegistryValue Root="HKCU" Key="Software\sny0\Countdown" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
+        </Component>
+      </Directory>
+    </Directory>
+
+    <Feature Id="Countdown" Title="カウントダウン" Level="1">
+      <ComponentRef Id="CountdownFiles" />
+      <ComponentRef Id="CountdownStartMenu" />
+    </Feature>
+
+    <UI>
+      <TextStyle Id="WixUI_Font_Normal" FaceName="Yu Gothic UI" Size="9" />
+      <TextStyle Id="WixUI_Font_Bigger" FaceName="Yu Gothic UI" Size="12" />
+      <TextStyle Id="WixUI_Font_Title" FaceName="Yu Gothic UI" Size="10" Bold="yes" />
+      <Property Id="DefaultUIFont" Value="WixUI_Font_Normal" />
+      <DialogRef Id="WelcomeDlg" />
+      <DialogRef Id="PrepareDlg" />
+      <DialogRef Id="ProgressDlg" />
+      <DialogRef Id="ResumeDlg" />
+      <DialogRef Id="FilesInUse" />
+      <DialogRef Id="MsiRMFilesInUse" />
+      <DialogRef Id="ErrorDlg" />
+      <DialogRef Id="FatalError" />
+      <DialogRef Id="UserExit" />
+
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">NOT Installed OR PATCH</Publish>
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg" Order="2">Installed AND NOT PATCH</Publish>
+      <Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Event="NewDialog" Value="MaintenanceTypeDlg">1</Publish>
+      <Publish Dialog="MaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg">1</Publish>
+      <Publish Dialog="MaintenanceTypeDlg" Control="RepairButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
+      <Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
+      <Publish Dialog="ExitDialog" Control="Finish" Event="EndDialog" Value="Return">1</Publish>
+    </UI>
+    <UIRef Id="WixUI_Common" />
+  </Product>
+</Wix>
