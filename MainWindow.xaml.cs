@@ -11,7 +11,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
-using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using Forms = System.Windows.Forms;
 
@@ -28,11 +27,7 @@ namespace Countdown
         private readonly Stopwatch elapsed = new Stopwatch();
         private readonly DispatcherTimer refreshTimer;
         private readonly CountdownSettings initialSettings;
-        private readonly DropShadowEffect digitShadow = new DropShadowEffect
-        {
-            Color = Color.FromRgb(7, 10, 16),
-            ShadowDepth = 2
-        };
+        private readonly DisplayWindow displayWindow;
         private TimeSpan duration;
         private TimerState state = TimerState.Ready;
         private SolidColorBrush digitColor;
@@ -41,6 +36,7 @@ namespace Countdown
 
         public MainWindow()
         {
+            displayWindow = new DisplayWindow();
             InitializeComponent();
             refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
             refreshTimer.Tick += RefreshCountdown;
@@ -109,8 +105,8 @@ namespace Countdown
 
         private void UpdateDisplay(TimeSpan remaining)
         {
-            TimeText.Text = FormatTime((int)Math.Ceiling(remaining.TotalSeconds), duration.TotalHours >= 1);
-            TimeText.FontSize = duration.TotalHours >= 1 ? 60 : 78;
+            bool showHours = duration.TotalHours >= 1;
+            displayWindow.SetTime(FormatTime((int)Math.Ceiling(remaining.TotalSeconds), showHours), showHours);
             ProgressScale.ScaleX = remaining.TotalSeconds / duration.TotalSeconds;
         }
 
@@ -265,8 +261,7 @@ namespace Countdown
         {
             if (OpacityText != null)
             {
-                Backdrop.Opacity = e.NewValue / 100;
-                ProgressTrack.Opacity = Backdrop.Opacity;
+                displayWindow.SetBackgroundOpacity(e.NewValue / 100);
                 OpacityText.Text = FormattableString.Invariant($"{e.NewValue:0}%");
             }
         }
@@ -298,14 +293,14 @@ namespace Countdown
         private void UpdateDigitColor()
         {
             DigitColorSample.Fill = digitColor ?? (SolidColorBrush)FindResource("ForegroundBrush");
-            TimeText.Foreground = digitColor ?? (Brush)FindResource(state == TimerState.Finished ? "FinishedBrush" : "ForegroundBrush");
+            displayWindow.SetDigitColor(digitColor ?? (Brush)FindResource(state == TimerState.Finished ? "FinishedBrush" : "ForegroundBrush"));
         }
 
         private void ChangeDigitWeight(object sender, SelectionChangedEventArgs e)
         {
             if (((ListBox)sender).SelectedItem is ListBoxItem option && option.Tag is FontWeight weight)
             {
-                TimeText.FontWeight = weight;
+                displayWindow.DigitWeight = weight;
             }
         }
 
@@ -316,9 +311,7 @@ namespace Countdown
                 return;
             }
 
-            digitShadow.Opacity = ShadowOpacitySlider.Value / 100;
-            digitShadow.BlurRadius = ShadowBlurSlider.Value;
-            TimeText.Effect = digitShadow.Opacity > 0 ? digitShadow : null;
+            displayWindow.SetDigitShadow(ShadowOpacitySlider.Value / 100, ShadowBlurSlider.Value);
         }
 
         private void ResetDigitAppearance(object sender, RoutedEventArgs e)
@@ -330,11 +323,25 @@ namespace Countdown
             ShadowBlurSlider.Value = CountdownSettings.DefaultShadowBlur;
         }
 
-        private void PositionWindow(object sender, RoutedEventArgs e)
+        private void ShowDisplayWindow(object sender, RoutedEventArgs e)
         {
             var area = SystemParameters.WorkArea;
-            Left = Math.Max(area.Left, area.Right - ActualWidth - 24);
-            Top = area.Top + 24;
+            displayWindow.Left = Math.Max(area.Left, area.Right - displayWindow.Width - 24);
+            displayWindow.Top = area.Top + 24;
+
+            double besideDisplay = displayWindow.Left - ActualWidth - 10;
+            Left = besideDisplay >= area.Left ? besideDisplay : displayWindow.Left;
+            Top = besideDisplay >= area.Left
+                ? displayWindow.Top
+                : Math.Max(area.Top, Math.Min(displayWindow.Top + displayWindow.Height + 10, area.Bottom - ActualHeight));
+
+            displayWindow.Closed += DisplayWindowClosed;
+            displayWindow.Show();
+        }
+
+        private void DisplayWindowClosed(object sender, EventArgs e)
+        {
+            Close();
         }
 
         private void KeepSettingsOnScreen(object sender, SizeChangedEventArgs e)
@@ -378,7 +385,7 @@ namespace Countdown
                 DurationSeconds = (int)duration.TotalSeconds,
                 BackgroundOpacity = OpacitySlider.Value,
                 DigitColor = digitColor?.Color,
-                DigitWeight = TimeText.FontWeight.ToOpenTypeWeight(),
+                DigitWeight = displayWindow.DigitWeight.ToOpenTypeWeight(),
                 ShadowOpacity = ShadowOpacitySlider.Value,
                 ShadowBlur = ShadowBlurSlider.Value
             };
@@ -395,6 +402,7 @@ namespace Countdown
 
         protected override void OnClosed(EventArgs e)
         {
+            displayWindow.Closed -= DisplayWindowClosed;
             refreshTimer.Stop();
             updateCheckTimer.Stop();
             updateLifetime.Cancel();
