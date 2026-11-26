@@ -15,7 +15,9 @@
     <CustomAction Id="RestartCountdownAfterUpgrade" FileKey="CountdownExecutable" ExeCommand=""
                   Return="asyncNoWait" />
     <InstallUISequence>
+      <Show Dialog="WelcomeDlg" Before="ProgressDlg">(NOT Installed AND NOT WIX_UPGRADE_DETECTED) OR PATCH</Show>
       <Custom Action="RestartCountdownAfterUpgrade" After="ExecuteAction">WIX_UPGRADE_DETECTED AND NOT Installed</Custom>
+      <Show Dialog="ExitDialog" OnExit="success">NOT WIX_UPGRADE_DETECTED</Show>
     </InstallUISequence>
 
     <Directory Id="TARGETDIR" Name="SourceDir">
