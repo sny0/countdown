@@ -12,6 +12,12 @@
     <Property Id="ARPPRODUCTICON" Value="Countdown.ico" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="スタートメニューの「カウントダウン」から起動できます。" />
 
+    <CustomAction Id="RestartCountdownAfterUpgrade" FileKey="CountdownExecutable" ExeCommand=""
+                  Return="asyncNoWait" />
+    <InstallUISequence>
+      <Custom Action="RestartCountdownAfterUpgrade" After="ExecuteAction">WIX_UPGRADE_DETECTED AND NOT Installed</Custom>
+    </InstallUISequence>
+
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="LocalAppDataFolder">
         <Directory Id="CountdownDataFolder" Name="Countdown">
