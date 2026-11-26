@@ -82,15 +82,6 @@ namespace Countdown
             }
 
             SetUpdateBusy(true);
-            var answer = MessageBox.Show(this,
-                $"v{update.ReleaseVersion} のインストーラーを開きますか？\nインストーラーが開くとカウントダウンを終了します。",
-                "カウントダウンの更新", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-            if (answer != MessageBoxResult.Yes)
-            {
-                SetUpdateBusy(false);
-                return;
-            }
-
             var cancellation = updateLifetime.Token;
             UpdateStatusText.Text = "インストーラーをダウンロードしています…";
             try
@@ -98,7 +89,7 @@ namespace Countdown
                 var path = await update.DownloadInstallerAsync(cancellation);
                 cancellation.ThrowIfCancellationRequested();
 
-                var installer = new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "msiexec.exe"), $"/i \"{path}\"")
+                var installer = new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "msiexec.exe"), $"/i \"{path}\" /norestart")
                 {
                     UseShellExecute = true
                 };
