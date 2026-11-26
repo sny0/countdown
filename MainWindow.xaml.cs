@@ -53,7 +53,8 @@ namespace Countdown
             DigitScaleSlider.Minimum = CountdownSettings.MinDigitScalePercent;
             DigitScaleSlider.Value = initialSettings.DigitScalePercent;
             DigitScaleSlider.ValueChanged += ChangeDigitScale;
-            displayWindow.SetDigitScale(DigitScaleSlider.Value / 100, null);
+            displayWindow.SetDigitScale(initialSettings.DigitScalePercent, null);
+            displayWindow.DigitScaleChanged += percent => DigitScaleSlider.Value = percent;
             UpdateControls();
             UpdateDisplay(duration);
             InitializeUpdateChecking();
@@ -321,8 +322,14 @@ namespace Countdown
 
         private void ChangeDigitScale(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
+            int percent = (int)e.NewValue;
+            if (percent == displayWindow.DigitScalePercent)
+            {
+                return;
+            }
+
             Rect? controlsBounds = IsLoaded ? new Rect(Left, Top, ActualWidth, ActualHeight) : (Rect?)null;
-            displayWindow.SetDigitScale(e.NewValue / 100, controlsBounds);
+            displayWindow.SetDigitScale(percent, controlsBounds);
         }
 
         private void ResetDigitAppearance(object sender, RoutedEventArgs e)
@@ -400,7 +407,7 @@ namespace Countdown
                 BackgroundOpacity = OpacitySlider.Value,
                 DigitColor = digitColor?.Color,
                 DigitWeight = displayWindow.DigitWeight.ToOpenTypeWeight(),
-                DigitScalePercent = (int)DigitScaleSlider.Value,
+                DigitScalePercent = displayWindow.DigitScalePercent,
                 ShadowOpacity = ShadowOpacitySlider.Value,
                 ShadowBlur = ShadowBlurSlider.Value
             };

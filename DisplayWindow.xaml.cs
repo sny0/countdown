@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -16,6 +18,15 @@ namespace Countdown
             Color = Color.FromRgb(7, 10, 16),
             ShadowDepth = 2
         };
+        private Point resizeGripOffset;
+        private Point resizeStartScreenPoint;
+        private Matrix resizePixelsToDips;
+        private Rect resizeStartBounds;
+        private Rect resizeWorkArea;
+        private Vector resizeEdge;
+
+        internal int DigitScalePercent { get; private set; }
+        internal event Action<int> DigitScaleChanged;
 
         public DisplayWindow()
         {
@@ -28,19 +39,16 @@ namespace Countdown
             TimeText.FontSize = showHours ? 60 : 78;
         }
 
-        internal void SetDigitScale(double scale, Rect? controlsBounds)
+        internal void SetDigitScale(int percent, Rect? controlsBounds)
         {
             Rect area = GetWorkArea();
-            double fittedScale = Math.Min(scale, Math.Min(area.Width / DisplayContent.Width, area.Height / DisplayContent.Height));
-            Width = DisplayContent.Width * fittedScale;
-            Height = DisplayContent.Height * fittedScale;
+            ApplyDigitScale(percent, area);
             if (!IsVisible)
             {
                 return;
             }
 
-            var bounds = new Rect(Math.Max(area.Left, Math.Min(Left, area.Right - Width)),
-                Math.Max(area.Top, Math.Min(Top, area.Bottom - Height)), Width, Height);
+            Rect bounds = FitPosition(Left, Top, area);
             if (controlsBounds is Rect controls && bounds.IntersectsWith(controls))
             {
                 const double gap = 10;
@@ -58,6 +66,78 @@ namespace Countdown
 
             Left = bounds.Left;
             Top = bounds.Top;
+        }
+
+        private void ApplyDigitScale(int percent, Rect area)
+        {
+            DigitScalePercent = percent;
+            double fittedScale = Math.Min(percent / 100.0, GetMaxScale(area));
+            Width = DisplayContent.Width * fittedScale;
+            Height = DisplayContent.Height * fittedScale;
+        }
+
+        private double GetMaxScale(Rect area)
+        {
+            return Math.Min(area.Width / DisplayContent.Width, area.Height / DisplayContent.Height);
+        }
+
+        private Rect FitPosition(double left, double top, Rect area)
+        {
+            return new Rect(Math.Max(area.Left, Math.Min(left, area.Right - Width)),
+                Math.Max(area.Top, Math.Min(top, area.Bottom - Height)), Width, Height);
+        }
+
+        private void StartResize(object sender, DragStartedEventArgs e)
+        {
+            var grip = (Thumb)sender;
+            resizeEdge = new Vector(Grid.GetColumn(grip) - 1, Grid.GetRow(grip) - 1);
+            resizeGripOffset = new Point(e.HorizontalOffset, e.VerticalOffset);
+            resizeStartScreenPoint = grip.PointToScreen(resizeGripOffset);
+            resizePixelsToDips = PresentationSource.FromVisual(this).CompositionTarget.TransformFromDevice;
+            resizeStartBounds = new Rect(Left, Top, Width, Height);
+            resizeWorkArea = GetWorkArea();
+        }
+
+        private void ResizeDisplay(object sender, DragDeltaEventArgs e)
+        {
+            var grip = (Thumb)sender;
+            var offset = new Vector(e.HorizontalChange, e.VerticalChange);
+            Point pointer = grip.PointToScreen(resizeGripOffset + offset);
+            ResizeFromScreenTravel(pointer - resizeStartScreenPoint);
+        }
+
+        private void FinishResize(object sender, DragCompletedEventArgs e)
+        {
+            if (!e.Canceled)
+            {
+                ResizeFromScreenTravel(new Vector(e.HorizontalChange, e.VerticalChange));
+            }
+        }
+
+        private void ResizeFromScreenTravel(Vector screenTravel)
+        {
+            Vector pointerTravel = resizePixelsToDips.Transform(screenTravel);
+            var scaleDirection = new Vector(resizeEdge.X * DisplayContent.Width, resizeEdge.Y * DisplayContent.Height);
+            double scaleChange = Vector.Multiply(pointerTravel, scaleDirection) / scaleDirection.LengthSquared;
+            double scale = resizeStartBounds.Width / DisplayContent.Width + scaleChange;
+            int minPercent = CountdownSettings.MinDigitScalePercent;
+            int maxPercent = Math.Max(minPercent, Math.Min(CountdownSettings.MaxDigitScalePercent,
+                (int)Math.Floor(GetMaxScale(resizeWorkArea) * 100)));
+            int percent = Math.Max(minPercent, Math.Min((int)Math.Round(scale * 100), maxPercent));
+            if (percent == DigitScalePercent)
+            {
+                return;
+            }
+
+            ApplyDigitScale(percent, resizeWorkArea);
+
+            // Anchor the opposite edge, or keep that axis centered when dragging only one edge.
+            double left = resizeStartBounds.Left + (resizeStartBounds.Width - Width) * (1 - resizeEdge.X) / 2;
+            double top = resizeStartBounds.Top + (resizeStartBounds.Height - Height) * (1 - resizeEdge.Y) / 2;
+            Rect bounds = FitPosition(left, top, resizeWorkArea);
+            Left = bounds.Left;
+            Top = bounds.Top;
+            DigitScaleChanged?.Invoke(percent);
         }
 
         private Rect GetWorkArea()

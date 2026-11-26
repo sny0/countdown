@@ -6,12 +6,51 @@
         AllowsTransparency="True" Background="Transparent" WindowStartupLocation="Manual"
         UseLayoutRounding="True" SnapsToDevicePixels="True"
         MouseLeftButtonDown="DragDisplay">
-  <Viewbox>
-    <Grid x:Name="DisplayContent" Width="334" Height="110" Background="Transparent"
-          TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="Grayscale">
-      <Border x:Name="Backdrop" Background="#151C26" CornerRadius="19" />
-      <TextBlock x:Name="TimeText" FontFamily="Bahnschrift, Segoe UI" FontWeight="SemiBold"
-                 VerticalAlignment="Center" HorizontalAlignment="Center" Cursor="SizeAll" />
-    </Grid>
-  </Viewbox>
+  <Grid>
+    <Grid.Resources>
+      <Style TargetType="Thumb">
+        <!-- A nonzero alpha lets the grips receive mouse input on a transparent display. -->
+        <Setter Property="Background" Value="#01000000" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="Thumb">
+              <Border Background="{TemplateBinding Background}" />
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+        <EventSetter Event="DragStarted" Handler="StartResize" />
+        <EventSetter Event="DragDelta" Handler="ResizeDisplay" />
+        <EventSetter Event="DragCompleted" Handler="FinishResize" />
+      </Style>
+    </Grid.Resources>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="8" />
+      <ColumnDefinition Width="*" />
+      <ColumnDefinition Width="8" />
+    </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="8" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="8" />
+    </Grid.RowDefinitions>
+
+    <Viewbox Grid.ColumnSpan="3" Grid.RowSpan="3">
+      <Grid x:Name="DisplayContent" Width="334" Height="110" Background="Transparent"
+            TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="Grayscale">
+        <Border x:Name="Backdrop" Background="#151C26" CornerRadius="19" />
+        <TextBlock x:Name="TimeText" FontFamily="Bahnschrift, Segoe UI" FontWeight="SemiBold"
+                   VerticalAlignment="Center" HorizontalAlignment="Center" Cursor="SizeAll" />
+      </Grid>
+    </Viewbox>
+
+    <Thumb Grid.Row="0" Grid.Column="0" Cursor="SizeNWSE" />
+    <Thumb Grid.Row="0" Grid.Column="1" Cursor="SizeNS" />
+    <Thumb Grid.Row="0" Grid.Column="2" Cursor="SizeNESW" />
+    <Thumb Grid.Row="1" Grid.Column="0" Cursor="SizeWE" />
+    <Thumb Grid.Row="1" Grid.Column="2" Cursor="SizeWE" />
+    <Thumb Grid.Row="2" Grid.Column="0" Cursor="SizeNESW" />
+    <Thumb Grid.Row="2" Grid.Column="1" Cursor="SizeNS" />
+    <Thumb Grid.Row="2" Grid.Column="2" Cursor="SizeNWSE" />
+  </Grid>
 </Window>
