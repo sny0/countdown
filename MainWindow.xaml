@@ -302,6 +302,15 @@
                 <ListBoxItem Content="太め" Tag="{x:Static FontWeights.Bold}" />
               </ListBox>
 
+              <DockPanel>
+                <TextBlock DockPanel.Dock="Right" Foreground="{StaticResource MutedBrush}"
+                           Text="{Binding Value, ElementName=DigitScaleSlider, StringFormat={}{0:0}%}" />
+                <Label Content="数字の大きさ" Target="{Binding ElementName=DigitScaleSlider}" Padding="0"
+                       Foreground="{StaticResource ForegroundBrush}" FontWeight="SemiBold" />
+              </DockPanel>
+              <Slider x:Name="DigitScaleSlider" Margin="0,5,0,10" TickFrequency="5" SmallChange="5" LargeChange="10"
+                      IsSnapToTickEnabled="True" IsMoveToPointEnabled="True" />
+
               <Border Height="1" Background="#435266" Margin="0,0,0,8" />
               <DockPanel>
                 <TextBlock DockPanel.Dock="Right" Foreground="{StaticResource MutedBrush}"

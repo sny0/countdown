@@ -9,6 +9,9 @@ namespace Countdown
 {
     internal sealed class CountdownSettings
     {
+        internal const int MinDigitScalePercent = 50;
+        internal const int MaxDigitScalePercent = 250;
+        internal const int DefaultDigitScalePercent = 100;
         internal const double DefaultShadowOpacity = 85;
         internal const double DefaultShadowBlur = 7;
 
@@ -19,6 +22,7 @@ namespace Countdown
         internal double BackgroundOpacity { get; set; } = 100;
         internal Color? DigitColor { get; set; }
         internal int DigitWeight { get; set; } = 600;
+        internal int DigitScalePercent { get; set; } = DefaultDigitScalePercent;
         internal double ShadowOpacity { get; set; } = DefaultShadowOpacity;
         internal double ShadowBlur { get; set; } = DefaultShadowBlur;
 
@@ -37,6 +41,8 @@ namespace Countdown
                 settings.BackgroundOpacity = ReadDouble(root, "backgroundOpacity", 100, settings.BackgroundOpacity);
                 settings.DigitColor = ReadColor((string)root.Attribute("digitColor"));
                 settings.DigitWeight = ReadInt(root, "digitWeight", 1, 999, settings.DigitWeight);
+                settings.DigitScalePercent = ReadInt(root, "digitScalePercent",
+                    MinDigitScalePercent, MaxDigitScalePercent, settings.DigitScalePercent);
                 settings.ShadowOpacity = ReadDouble(root, "shadowOpacity", 100, settings.ShadowOpacity);
                 settings.ShadowBlur = ReadDouble(root, "shadowBlur", 20, settings.ShadowBlur);
             }
@@ -87,6 +93,7 @@ namespace Countdown
                 new XAttribute("durationSeconds", DurationSeconds),
                 new XAttribute("backgroundOpacity", BackgroundOpacity),
                 new XAttribute("digitWeight", DigitWeight),
+                new XAttribute("digitScalePercent", DigitScalePercent),
                 new XAttribute("shadowOpacity", ShadowOpacity),
                 new XAttribute("shadowBlur", ShadowBlur));
 

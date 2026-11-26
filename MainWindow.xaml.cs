@@ -49,6 +49,11 @@ namespace Countdown
                 .FirstOrDefault(item => Equals(item.Tag, weight)) ?? DefaultWeightOption;
             ShadowOpacitySlider.Value = initialSettings.ShadowOpacity;
             ShadowBlurSlider.Value = initialSettings.ShadowBlur;
+            DigitScaleSlider.Maximum = CountdownSettings.MaxDigitScalePercent;
+            DigitScaleSlider.Minimum = CountdownSettings.MinDigitScalePercent;
+            DigitScaleSlider.Value = initialSettings.DigitScalePercent;
+            DigitScaleSlider.ValueChanged += ChangeDigitScale;
+            displayWindow.SetDigitScale(DigitScaleSlider.Value / 100, null);
             UpdateControls();
             UpdateDisplay(duration);
             InitializeUpdateChecking();
@@ -314,6 +319,12 @@ namespace Countdown
             displayWindow.SetDigitShadow(ShadowOpacitySlider.Value / 100, ShadowBlurSlider.Value);
         }
 
+        private void ChangeDigitScale(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            Rect? controlsBounds = IsLoaded ? new Rect(Left, Top, ActualWidth, ActualHeight) : (Rect?)null;
+            displayWindow.SetDigitScale(e.NewValue / 100, controlsBounds);
+        }
+
         private void ResetDigitAppearance(object sender, RoutedEventArgs e)
         {
             digitColor = null;
@@ -321,16 +332,19 @@ namespace Countdown
             DefaultWeightOption.IsSelected = true;
             ShadowOpacitySlider.Value = CountdownSettings.DefaultShadowOpacity;
             ShadowBlurSlider.Value = CountdownSettings.DefaultShadowBlur;
+            DigitScaleSlider.Value = CountdownSettings.DefaultDigitScalePercent;
         }
 
         private void ShowDisplayWindow(object sender, RoutedEventArgs e)
         {
             var area = SystemParameters.WorkArea;
             displayWindow.Left = Math.Max(area.Left, area.Right - displayWindow.Width - 24);
-            displayWindow.Top = area.Top + 24;
+            displayWindow.Top = Math.Max(area.Top, Math.Min(area.Top + 24, area.Bottom - displayWindow.Height));
 
             double besideDisplay = displayWindow.Left - ActualWidth - 10;
-            Left = besideDisplay >= area.Left ? besideDisplay : displayWindow.Left;
+            Left = besideDisplay >= area.Left
+                ? besideDisplay
+                : Math.Max(area.Left, Math.Min(displayWindow.Left, area.Right - ActualWidth));
             Top = besideDisplay >= area.Left
                 ? displayWindow.Top
                 : Math.Max(area.Top, Math.Min(displayWindow.Top + displayWindow.Height + 10, area.Bottom - ActualHeight));
@@ -386,6 +400,7 @@ namespace Countdown
                 BackgroundOpacity = OpacitySlider.Value,
                 DigitColor = digitColor?.Color,
                 DigitWeight = displayWindow.DigitWeight.ToOpenTypeWeight(),
+                DigitScalePercent = (int)DigitScaleSlider.Value,
                 ShadowOpacity = ShadowOpacitySlider.Value,
                 ShadowBlur = ShadowBlurSlider.Value
             };
