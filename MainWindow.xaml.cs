@@ -55,6 +55,7 @@ namespace Countdown
             ShadowBlurSlider.Value = initialSettings.ShadowBlur;
             UpdateControls();
             UpdateDisplay(duration);
+            InitializeUpdateChecking();
         }
 
         private void ToggleCountdown(object sender, RoutedEventArgs e)
@@ -189,8 +190,16 @@ namespace Countdown
                 return;
             }
 
-            DurationInput.Text = FormatTime((int)duration.TotalSeconds, duration.TotalHours >= 1);
-            SettingsPanel.Visibility = Visibility.Visible;
+            ShowSettings();
+        }
+
+        private void ShowSettings()
+        {
+            if (SettingsPanel.Visibility == Visibility.Collapsed)
+            {
+                DurationInput.Text = FormatTime((int)duration.TotalSeconds, duration.TotalHours >= 1);
+                SettingsPanel.Visibility = Visibility.Visible;
+            }
         }
 
         private void HideSettings()
@@ -387,6 +396,9 @@ namespace Countdown
         protected override void OnClosed(EventArgs e)
         {
             refreshTimer.Stop();
+            updateCheckTimer.Stop();
+            updateLifetime.Cancel();
+            updateLifetime.Dispose();
             base.OnClosed(e);
         }
     }

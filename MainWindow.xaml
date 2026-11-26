@@ -49,6 +49,9 @@
               <Trigger Property="IsPressed" Value="True">
                 <Setter TargetName="Highlight" Property="Background" Value="#35000000" />
               </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.5" />
+              </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
@@ -154,6 +157,7 @@
           <ColumnDefinition Width="*" />
           <ColumnDefinition Width="Auto" />
           <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
 
         <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Cursor="SizeAll"
@@ -166,7 +170,10 @@
                      FontWeight="SemiBold" AutomationProperties.LiveSetting="Polite" />
         </StackPanel>
 
-        <Button Grid.Column="1" x:Name="SettingsButton" Style="{StaticResource IconButton}" Margin="0,0,6,0"
+        <Button Grid.Column="1" x:Name="UpdateNoticeButton" Content="更新あり" Height="30" Margin="0,0,6,0"
+                Visibility="Collapsed" Style="{StaticResource PrimaryButton}" Click="OpenUpdateSettings" />
+
+        <Button Grid.Column="2" x:Name="SettingsButton" Style="{StaticResource IconButton}" Margin="0,0,6,0"
                 ToolTip="設定" AutomationProperties.Name="設定" Click="ToggleSettings">
           <Path Stroke="{StaticResource ForegroundBrush}" StrokeThickness="1.35" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                 Data="M 0,2 H 5 M 9,2 H 14 M 0,7 H 9 M 13,7 H 14 M 0,12 H 2 M 6,12 H 14
@@ -175,7 +182,7 @@
                       M 2,12 A 2,2 0 1 0 6,12 A 2,2 0 1 0 2,12" />
         </Button>
 
-        <Button Grid.Column="2" Style="{StaticResource IconButton}" ToolTip="閉じる" AutomationProperties.Name="閉じる" Click="CloseWindow">
+        <Button Grid.Column="3" Style="{StaticResource IconButton}" ToolTip="閉じる" AutomationProperties.Name="閉じる" Click="CloseWindow">
           <Path Stroke="{StaticResource ForegroundBrush}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                 Data="M 0,0 L 9,9 M 9,0 L 0,9" />
         </Button>
@@ -322,6 +329,20 @@
                       ValueChanged="ChangeDigitShadow" />
               <Button Height="29" HorizontalAlignment="Right" Style="{StaticResource PillButton}"
                       Content="見た目を初期値に戻す" Click="ResetDigitAppearance" />
+            </StackPanel>
+          </TabItem>
+
+          <TabItem x:Name="UpdateTab" Header="更新">
+            <StackPanel>
+              <TextBlock x:Name="InstalledVersionText" Foreground="{StaticResource ForegroundBrush}" FontWeight="SemiBold" />
+              <TextBlock x:Name="UpdateStatusText" Margin="0,6,0,12" TextWrapping="Wrap"
+                         Foreground="{StaticResource MutedBrush}" AutomationProperties.LiveSetting="Polite" />
+              <WrapPanel>
+                <Button x:Name="CheckUpdateButton" Content="更新を確認" Height="32" Margin="0,0,6,0"
+                        Style="{StaticResource PillButton}" Click="CheckForUpdates" />
+                <Button x:Name="InstallUpdateButton" Content="更新する" Height="32" Visibility="Collapsed"
+                        Style="{StaticResource PrimaryButton}" Click="InstallUpdate" />
+              </WrapPanel>
             </StackPanel>
           </TabItem>
         </TabControl>
